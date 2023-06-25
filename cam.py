@@ -2,7 +2,6 @@ import socket
 import struct
 import cv2
 
-
 ip_address = '127.0.0.1'
 port = 8081
 
