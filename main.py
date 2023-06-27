@@ -11,7 +11,6 @@ import socket
 import struct
 import numpy
 import requests
-import json
 import datetime
 import json             # jsonデータ形式を利用するのでjsonライブラリをインポート
 import urllib.request   # 標準のURLライブラリを利用する
@@ -27,7 +26,7 @@ class MainBody:
     def send_oknext(self):
         pass
 
-    def upload_to_imgur(img_file):
+    def upload_to_imgur(self, img_file):
         client_id = '383dded1422ae4a'   #APIキー(固定)
         image_path = img_file    #写真のパス
 
@@ -50,7 +49,7 @@ class MainBody:
     def save_log(self):
         pass
 
-    def post_to_ifttt(photolink):
+    def post_to_ifttt(self, photolink):
         # In[1]:
         before = datetime.datetime.now()
         value1 = before.strftime('%Y/%m/%d %H:%M:%S')
