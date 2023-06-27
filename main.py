@@ -12,6 +12,7 @@ import struct
 import numpy
 import requests
 import datetime
+import os
 import json             # jsonデータ形式を利用するのでjsonライブラリをインポート
 import urllib.request   # 標準のURLライブラリを利用する
 
@@ -50,8 +51,11 @@ class MainBody:
 
     def save_img_local(self, img):
         nowdate = datetime.datetime.now()
-        path = nowdate.strftime('/home/pi/VerminTrapNotificationSystem/image/%Y-%m-%d_%H-%M-%S-%f.jpg')
+        # path = nowdate.strftime('/home/pi/VerminTrapNotificationSystem/image/%Y-%m-%d_%H-%M-%S-%f.jpg')
+        path = nowdate.strftime('./image/%Y-%m-%d_%H-%M-%S-%f.jpg')
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
         cv2.imwrite(path, img)
+        print('写真をローカルに保存しました')
         return path
 
     def save_log(self):
@@ -136,6 +140,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock1: # 罠発動検�
                         break
                     imgsiz = struct.unpack('!i', recvbuf3)[0]
                     print('予告された写真データサイズ：', imgsiz)
+                    mainbody.send_oknext(sock2)
                     recvbuf3 = sock2.recv(6)
                     if not recvbuf3:
                         break
@@ -144,6 +149,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock1: # 罠発動検�
                     if prefix == b'IMGDAT':
                         print('写真データ信号を受信しました')
                         recvbuf3 = sock2.recv(imgsiz)
+                        sock2.close()
                         # 受信したデータをデコード
                         imgdata = numpy.frombuffer(recvbuf3, dtype=numpy.uint8)
                         # データを画像に変換
@@ -158,7 +164,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock1: # 罠発動検�
                         # cv2.destroyAllWindows()
 
                         #ローカルに写真を保存(捕獲記録) #RaspberryPiOS上で実行する必要がある
-                        pic_path = mainbody.save_img_local(img)
+                        pic_path = mainbody.save_img_local(imgdata)
 
                         link = mainbody.upload_to_imgur(pic_path)      #写真アップロードしてリンクを取得
 
