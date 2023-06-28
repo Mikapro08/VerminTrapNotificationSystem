@@ -1,18 +1,18 @@
-#組込み開発プロジェクト１ グループ8 害獣捕獲通知システム
-#本体ユニット(main.py)
-#Programmer(socket) : 1CJK2102 Mikihiko Takubo
-#Programmer(imgur) : 1CJK2104 Yuto Kon
-#Programmer(IFTTT) : 1CJK2106 Tomohito Abe
+# 組込み開発プロジェクト１ グループ8 害獣捕獲通知システム
+# 本体ユニット(main.py)
+# Programmer(socket) : 1CJK2102 Mikihiko Takubo
+# Programmer(imgur)  : 1CJK2104 Yuto Kon
+# Programmer(IFTTT)  : 1CJK2106 Tomohito Abe
 
 # coding: utf-8
 
-import cv2
-import socket
-import struct
-import numpy
+import cv2              # 画像を扱うために輸入
+import numpy            # OpenCVで画像を扱う際のオブジェクトが内部的にnumpyのオブジェクトであるため輸入
+import socket           # ソケット通信をするために輸入
+import struct           # ソケット通信をする際にデータをパック・アンパックするために輸入
 import requests
-import datetime
-import os
+import datetime         # 日付時刻をファイル名にして写真を保存するために輸入
+import os               # カレントディレクトリを設定するために輸入
 import json             # jsonデータ形式を利用するのでjsonライブラリをインポート
 import urllib.request   # 標準のURLライブラリを利用する
 
@@ -21,17 +21,20 @@ class MainBody:
     def __init__(self):
         pass
 
+    
     def send_imgreq(self, ip_address, port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((ip_address, cam_port))   # サーバに接続を要求する
-        sock.sendall(b'IMGREQ')
+        sock.connect((ip_address, cam_port))        # カメラユニットに接続を要求する
+        sock.sendall(b'IMGREQ')                     # 写真撮影要求信号を送信
         print('写真撮影要求信号を送信しました')
         return sock
 
+    
     def send_oknext(self, sock):
-        sock.sendall(b'OKNEXT')
+        sock.sendall(b'OKNEXT')                     # 続行催促信号を送信
         print('続行催促信号を送信しました')
 
+    
     def upload_to_imgur(self, img_file):
         client_id = '383dded1422ae4a'   #APIキー(固定)
         image_path = img_file    #写真のパス
@@ -49,19 +52,18 @@ class MainBody:
 
         return url
 
+    
     def save_img_local(self, img):
         nowdate = datetime.datetime.now()
         # path = nowdate.strftime('/home/pi/VerminTrapNotificationSystem/image/%Y-%m-%d_%H-%M-%S-%f.jpg')
         path = nowdate.strftime('./image/%Y-%m-%d_%H-%M-%S-%f.jpg')
         # path = './a.jpg'
-        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))    # このファイルが存在する場所をカレントディレクトリに設定
         # print(__file__)
         cv2.imwrite(path, img)
         print('写真をローカルに保存しました')
         return path
 
-    def save_log(self):
-        pass
 
     def post_to_ifttt(self, photolink):
         # In[1]:
@@ -113,65 +115,67 @@ ip_address = '127.0.0.1'
 sens_port = 8080
 cam_port = 8081
 
-mainbody = MainBody() #MainBodyのインスタンスを生成
+mainbody = MainBody()                                               # MainBodyのインスタンスを生成
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock1: # 罠発動検知ユニットとの接続
-    sock1.bind((ip_address, sens_port))  # バインド
-    sock1.listen(1)  # 受信待機
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock1:    # 罠発動検知ユニットとの接続
+    sock1.bind((ip_address, sens_port))                             # バインド
+    sock1.listen(1)                                                 # 受信待機
     print('罠発動検知信号を待機しています…')
     while True:
-        conn, addr = sock1.accept()  # 接続要求を受けいれる
+        conn, addr = sock1.accept()                                 # 接続要求を受けいれる
         with conn:
             print('接続しました：', addr)
-            recvbuf1 = conn.recv(6) # 信号識別符号を受信
+
+            recvbuf1 = conn.recv(6)                                 # 信号識別符号を受信
             if not recvbuf1:
                 break
             prefix = struct.unpack('!6s', recvbuf1)[0]
             print('受信した接頭辞：', prefix)
-            if prefix == b'SENSED':
-                print('罠発動検知信号を受信しました')
-                sock2 = mainbody.send_imgreq(ip_address, cam_port)
-                recvbuf2 = sock2.recv(6)
-                if not recvbuf2:
+            if prefix != b'SENSED':
+                break
+            print('罠発動検知信号を受信しました')
+
+            sock2 = mainbody.send_imgreq(ip_address, cam_port)      # 写真撮影要求信号を送信
+
+            recvbuf2 = sock2.recv(6)                                # 信号識別符号を受信
+            if not recvbuf2:
+                break
+            prefix = struct.unpack('!6s', recvbuf2)[0]
+            print('受信した接頭辞：', prefix)
+            if prefix != b'IMGSIZ':
+                break
+            print('写真データサイズ予告信号を受信しました')
+            recvbuf3 = sock2.recv(4)                                # データサイズを受信
+            if not recvbuf3:
+                break
+            imgsiz = struct.unpack('!i', recvbuf3)[0]
+            print('予告された写真データサイズ：', imgsiz)
+
+            mainbody.send_oknext(sock2)                             # 続行催促信号を送信
+
+            recvbuf3 = sock2.recv(6)                                # 信号識別符号を受信
+            if not recvbuf3:
+                break
+            prefix = struct.unpack('!6s', recvbuf3)[0]
+            print('受信した接頭辞：', prefix)
+            if prefix != b'IMGDAT':
+                break
+            print('写真データ信号を受信しました')
+            recvbuf3 = sock2.recv(imgsiz)                           # 写真データを受信
+
+            sock2.close()                                           # カメラユニットとのソケットを閉じる
+            
+            imgdata = numpy.frombuffer(recvbuf3, dtype=numpy.uint8) # 受信したデータをデコード
+            img = cv2.imdecode(imgdata, 1)                          # データを画像に変換
+            cv2.imshow('image', img)                                # 画像を表示
+            while True:
+                k = cv2.waitKey(1)                                  # キー入力を待機
+                if k == 13:                                         # Enterキー
                     break
-                prefix = struct.unpack('!6s', recvbuf2)[0]
-                print('受信した接頭辞：', prefix)
-                if prefix == b'IMGSIZ':
-                    print('写真データサイズ予告信号を受信しました')
-                    recvbuf3 = sock2.recv(4)
-                    if not recvbuf3:
-                        break
-                    imgsiz = struct.unpack('!i', recvbuf3)[0]
-                    print('予告された写真データサイズ：', imgsiz)
-                    mainbody.send_oknext(sock2)
-                    recvbuf3 = sock2.recv(6)
-                    if not recvbuf3:
-                        break
-                    prefix = struct.unpack('!6s', recvbuf3)[0]
-                    print('受信した接頭辞：', prefix)
-                    if prefix == b'IMGDAT':
-                        print('写真データ信号を受信しました')
-                        recvbuf3 = sock2.recv(imgsiz)
-                        sock2.close()
-                        # 受信したデータをデコード
-                        imgdata = numpy.frombuffer(recvbuf3, dtype=numpy.uint8)
-                        # データを画像に変換
-                        img = cv2.imdecode(imgdata, 1)
-                        # 画像を表示
-                        cv2.imshow('image', img)
-                        # キー入力を待機
-                        while True:
-                            k = cv2.waitKey(1)
-                            if k == 13:
-                                break
-                        cv2.destroyAllWindows()
+            cv2.destroyAllWindows()
 
-                        #ローカルに写真を保存(捕獲記録) #RaspberryPiOS上で実行する必要がある
-                        pic_path = mainbody.save_img_local(img)
+            pic_path = mainbody.save_img_local(img)                 # ローカルに写真を保存(RaspberryPiOS上で実行して検証するべき)
 
-                        link = mainbody.upload_to_imgur(pic_path)      #写真アップロードしてリンクを取得
+            link = mainbody.upload_to_imgur(pic_path)               # 写真アップロードしてリンクを取得
 
-                        mainbody.post_to_ifttt(link)    #IFTTTにメッセージと写真リンクを送信
-            else:
-                print('受信した接頭辞：', prefix)
-                print('よくわからない信号を受信しました')
+            mainbody.post_to_ifttt(link)                            # IFTTTにメッセージと写真リンクを送信
