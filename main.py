@@ -53,7 +53,9 @@ class MainBody:
         nowdate = datetime.datetime.now()
         # path = nowdate.strftime('/home/pi/VerminTrapNotificationSystem/image/%Y-%m-%d_%H-%M-%S-%f.jpg')
         path = nowdate.strftime('./image/%Y-%m-%d_%H-%M-%S-%f.jpg')
+        # path = './a.jpg'
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
+        # print(__file__)
         cv2.imwrite(path, img)
         print('写真をローカルに保存しました')
         return path
@@ -69,7 +71,8 @@ class MainBody:
 
         # In[2]:
         EventName = 'RP-posted'             ##IFTTT イベント名                 
-        APIkey = 'd1N9nTzOZua9XmDPvF4RxP'   ##この中の''内を編集すれば使用するユーザを変更可
+        # APIkey = 'd1N9nTzOZua9XmDPvF4RxP'   ##この中の''内を編集すれば使用するユーザを変更可
+        APIkey = 'dLkCI-wnfwQV0sJGXLOU-s'   ##この中の''内を編集すれば使用するユーザを変更可
         url = f'https://maker.ifttt.com/trigger/{EventName}/with/key/{APIkey}'
         data = {
             'value1': value1 ,'value2': value2,
@@ -157,14 +160,14 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock1: # 罠発動検�
                         # 画像を表示
                         cv2.imshow('image', img)
                         # キー入力を待機
-                        # while True:
-                        #     k = cv2.waitKey(1)
-                        #     if k == 13:
-                        #         break
-                        # cv2.destroyAllWindows()
+                        while True:
+                            k = cv2.waitKey(1)
+                            if k == 13:
+                                break
+                        cv2.destroyAllWindows()
 
                         #ローカルに写真を保存(捕獲記録) #RaspberryPiOS上で実行する必要がある
-                        pic_path = mainbody.save_img_local(imgdata)
+                        pic_path = mainbody.save_img_local(img)
 
                         link = mainbody.upload_to_imgur(pic_path)      #写真アップロードしてリンクを取得
 
