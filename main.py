@@ -32,6 +32,16 @@ class MainBody:
         print('続行催促信号を送信しました')
 
     
+    def save_img_local(self, img):
+        print(type(img))
+        nowdate = datetime.datetime.now()
+        path = nowdate.strftime('./image/%Y-%m-%d_%H-%M-%S-%f.jpg')
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))    # このファイルが存在する場所をカレントディレクトリに設定
+        cv2.imwrite(path, img)
+        print('写真をローカルに保存しました')
+        return path
+
+    
     def upload_to_imgur(self, img_file):
         client_id = '383dded1422ae4a'   #APIキー(固定)
         image_path = img_file    #写真のパス
@@ -48,15 +58,6 @@ class MainBody:
         url = json.loads(r.text)['data']['link']    #取得したjsonデータからリンクを抽出
 
         return url
-
-    
-    def save_img_local(self, img):
-        nowdate = datetime.datetime.now()
-        path = nowdate.strftime('./image/%Y-%m-%d_%H-%M-%S-%f.jpg')
-        os.chdir(os.path.dirname(os.path.abspath(__file__)))    # このファイルが存在する場所をカレントディレクトリに設定
-        cv2.imwrite(path, img)
-        print('写真をローカルに保存しました')
-        return path
 
 
     def post_to_ifttt(self, photolink):
@@ -109,18 +110,18 @@ ip_address = '127.0.0.1'
 sens_port = 8080
 cam_port = 8081
 
-mainbody = MainBody()                                                   # MainBodyのインスタンスを生成
+mainbody = MainBody()                                                       # MainBodyのインスタンスを生成
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_main:    # 罠発動検知ユニットとの接続
-    sock_main.bind((ip_address, sens_port))                             # バインド
-    sock_main.listen(1)                                                 # 受信待機
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_main:        # 罠発動検知ユニットとの接続
+    sock_main.bind((ip_address, sens_port))                                 # バインド
+    sock_main.listen(1)                                                     # 受信待機
     print('罠発動検知信号を待機しています…')
     while True:
-        sock_sens, addr = sock_main.accept()                            # 接続要求を受けいれる
+        sock_sens, addr = sock_main.accept()                                # 接続要求を受けいれる
         with sock_sens:
             print('接続しました：', addr)
 
-            recvbuf = sock_sens.recv(6)                                 # 信号識別符号を受信
+            recvbuf = sock_sens.recv(6)                                     # 信号識別符号を受信
             if not recvbuf:
                 break
             prefix = struct.unpack('!6s', recvbuf)[0]
