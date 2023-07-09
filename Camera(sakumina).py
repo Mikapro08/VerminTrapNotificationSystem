@@ -12,22 +12,12 @@
 import tkinter
 from tkinter import ttk
 from tkinter import messagebox
-
-# 画像処理系モジュール
-import cv2
-import PIL.Image, PIL.ImageTk
-
-# ソケット通信関連のモジュール
-import socket
-
-# マルチスレッド処理のモジュール
-import threading
-
-# そのほか必要なモジュール
 import datetime
 import os
-import struct
 
+# 映像処理系モジュール
+import cv2
+import PIL.Image, PIL.ImageTk
 
 #-------------------------------------------------------------------------------------------------------------------
 # メインコード
@@ -35,70 +25,22 @@ import struct
 
 os.chdir(os.path.dirname(os.path.abspath(__file__))) # カレントディレクトリをこの.pyが所在するディレクトリへ設定
 
-ip_address = '127.0.0.1'
-port = 8081
-
-
 class Camera(tkinter.Frame):
 
     # windowの初期設定
     def __init__(self, master = None):
 
-        super().__init__(master)                            # 初期化
-        self.master.geometry("640x580")                     # windowサイズの指定
-        self.master.resizable(False, False)                 # windowサイズ変更の無効化
-        self.master.title("害獣捕獲通知システム")                # windowタイトルの設定
+        super().__init__(master)                                               # 初期化
+        self.master.geometry("640x580")                                        # windowサイズの指定
+        self.master.resizable(False, False)                                    # windowサイズ変更の無効化
+        self.master.title("害獣捕獲通知システム")                               # windowタイトルの設定
 
         self.Timestamp_var = tkinter.IntVar()
         self.scalevar_Bright = tkinter.DoubleVar()
         self.button_img = tkinter.PhotoImage(file="cameraicon.png")
 
-        self.sock_cam = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock_cam.bind((ip_address, port))
-        self.sock_cam.listen(1)
-
         self.MovieCanvas()
         self.Widget()
-
-        self.thread = threading.Thread(target=self.deal_socket)
-        self.thread.start()
-
-
-    # ソケット通信による写真の送信を担う関数
-    def deal_socket(self):
-        while True:
-            print('写真撮影要求信号を待機しています…')
-            sock_main, addr = self.sock_cam.accept()
-            with sock_main:
-                print('接続しました：', addr)
-                recvbuf = sock_main.recv(6)
-                if not recvbuf:
-                    break
-                prefix = struct.unpack('!6s', recvbuf)[0]
-                print('受信した接頭辞：', prefix)
-                if prefix != b'IMGREQ':
-                    break
-                print('写真撮影要求信号を受信しました')
-
-                imgsiz = self.frame.size
-                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
-                result, imgdata = cv2.imencode('.jpg', self.frame, encode_param)
-
-                sendbuf = struct.pack('!6si', b'IMGSIZ', imgsiz)
-                sock_main.sendall(sendbuf)
-                print('写真データサイズ予告信号を送信しました')
-                recvbuf = sock_main.recv(6)
-                if not recvbuf:
-                    break
-                prefix = struct.unpack('!6s', recvbuf)[0]
-                print('受信した接頭辞：', prefix)
-                if prefix != b'OKNEXT':
-                    break
-                print('続行催促信号を受信しました')
-                sock_main.sendall(b'IMGDAT')
-                sock_main.sendall(imgdata)
-                print('写真データ信号を送信しました')
-
 
     # window内のカメラ映像表示部分（canvas定義とカメラ読み込み）
     def MovieCanvas(self):
@@ -111,6 +53,7 @@ class Camera(tkinter.Frame):
         self.canvas = tkinter.Canvas(self.master, width= self.width-6, height=self.height-6, relief=tkinter.SOLID, bd=2)
         self.canvas.grid(row=0,column=0)
         self.canvas.place(x=0,y=0)
+
         self.update()
 
     # カメラ画像の更新関数
@@ -135,6 +78,10 @@ class Camera(tkinter.Frame):
                             lineType=cv2.LINE_AA)
 
             self.photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(self.frame))
+
+            #《↓ここにソケット通信系のコードを挿入↓》
+
+            #《↑ここにソケット通信系のコードを挿入↑》
             
             self.canvas.create_image(0,0, image= self.photo, anchor = tkinter.NW)
             self.master.after(1, self.update)
@@ -170,7 +117,7 @@ class Camera(tkinter.Frame):
 
         # カメラ動作確認用ボタン（.pyファイル直下ディレクトリに保存）
 
-        def shutter(  e):
+        def shutter(e):
             os.chdir(os.path.dirname(os.path.abspath(__file__)))
             self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB) 
             cv2.imwrite('test.png',self.frame)
@@ -188,13 +135,10 @@ class Camera(tkinter.Frame):
         self.canvas_camcheck_text = tkinter.Label(text="テスト撮影", foreground="#00a1ae")
         self.canvas_camcheck_text.place(x=530,y=555)
 
-
-
 def main():
 
     app = Camera(master=tkinter.Tk())
     app.mainloop()
-
 
 if __name__ == "__main__":
     main()

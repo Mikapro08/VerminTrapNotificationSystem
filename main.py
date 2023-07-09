@@ -6,7 +6,7 @@
 
 # coding: utf-8
 
-import cv2              # 画像を扱うために輸入
+import cv2              # 画像を扱うためにインポート
 import numpy            # OpenCVで画像を扱う際のオブジェクトが内部的にnumpyのオブジェクトであるためインポート
 import socket           # ソケット通信をするためにインポート
 import struct           # ソケット通信をする際にデータをパック・アンパックするためにインポート
@@ -163,6 +163,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_main:        # �
             
             imgdata = numpy.frombuffer(recvbuf, dtype=numpy.uint8)          # 受信したデータをデコード
             img = cv2.imdecode(imgdata, 1)                                  # データを画像に変換
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)                      # PillowはRGB,cv2はBGRなので変換が必要
             cv2.imshow('image', img)                                        # 画像を表示
             while True:
                 k = cv2.waitKey(1)                                          # キー入力を待機
