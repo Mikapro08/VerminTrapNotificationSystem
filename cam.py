@@ -47,11 +47,11 @@ class Camera(tkinter.Frame):
         super().__init__(master)                            # 初期化
         self.master.geometry("640x580")                     # windowサイズの指定
         self.master.resizable(False, False)                 # windowサイズ変更の無効化
-        self.master.title("害獣捕獲通知システム")                # windowタイトルの設定
+        self.master.title("害獣捕獲通知システム - カメラユニット")  # windowタイトルの設定
 
         self.Timestamp_var = tkinter.IntVar()
         self.scalevar_Bright = tkinter.DoubleVar()
-        self.button_img = tkinter.PhotoImage(file="cameraicon.png")
+        self.button_img = tkinter.PhotoImage(file="./InterfaceImg/CameraIcon.png")
 
         self.sock_cam = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock_cam.bind((ip_address, port))
@@ -173,8 +173,8 @@ class Camera(tkinter.Frame):
         def shutter(  e):
             os.chdir(os.path.dirname(os.path.abspath(__file__)))
             self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB) 
-            cv2.imwrite('test.png',self.frame)
-            messagebox.showinfo("カメラ画像保存",f"test.pngをフォルダ\n{os.path.dirname(os.path.abspath(__file__))}\nに保存しました。")
+            cv2.imwrite('./OutputImg/test.png',self.frame)
+            messagebox.showinfo("カメラ画像保存",f"test.pngをフォルダ\n{os.path.dirname(os.path.abspath(__file__))}\\OutputImg\nに保存しました。")
 
         self.canvas_camcheck = tkinter.Canvas(self.master, width=70, height=75)
 

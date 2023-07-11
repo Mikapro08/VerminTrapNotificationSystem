@@ -17,6 +17,9 @@ import json             # jsonデータ形式を利用するのでjsonライブ�
 import urllib.request   # 標準のURLライブラリを利用する
 
 
+debug = False
+
+
 class MainBody:
     def __init__(self):
         pass
@@ -35,7 +38,7 @@ class MainBody:
     def save_img_local(self, img):
         print(type(img))
         nowdate = datetime.datetime.now()
-        path = nowdate.strftime('./image/%Y-%m-%d_%H-%M-%S-%f.jpg')
+        path = nowdate.strftime('./OutputImg/%Y-%m-%d_%H-%M-%S-%f.jpg')
         os.chdir(os.path.dirname(os.path.abspath(__file__)))    # このファイルが存在する場所をカレントディレクトリに設定
         cv2.imwrite(path, img)
         print('写真をローカルに保存しました')
@@ -164,12 +167,14 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_main:        # �
             imgdata = numpy.frombuffer(recvbuf, dtype=numpy.uint8)          # 受信したデータをデコード
             img = cv2.imdecode(imgdata, 1)                                  # データを画像に変換
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)                      # PillowはRGB,cv2はBGRなので変換が必要
-            cv2.imshow('image', img)                                        # 画像を表示
-            while True:
-                k = cv2.waitKey(1)                                          # キー入力を待機
-                if k == 13:                                                 # Enterキー
-                    break
-            cv2.destroyAllWindows()
+
+            if debug == True:
+                cv2.imshow('image', img)                                        # 画像を表示
+                while True:
+                    k = cv2.waitKey(1)                                          # キー入力を待機
+                    if k == 13:                                                 # Enterキー
+                        break
+                cv2.destroyAllWindows()
 
             pic_path = mainbody.save_img_local(img)                         # ローカルに写真を保存(RaspberryPiOS上で実行して検証するべき)
 
