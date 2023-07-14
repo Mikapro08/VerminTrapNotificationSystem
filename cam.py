@@ -81,7 +81,7 @@ class Camera(tkinter.Frame):
                 print('写真撮影要求信号を受信しました')
 
                 imgsiz = self.frame.size
-                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 70]
                 result, imgdata = cv2.imencode('.jpg', self.frame, encode_param)
 
                 sendbuf = struct.pack('!6si', b'IMGSIZ', imgsiz)
@@ -124,10 +124,10 @@ class Camera(tkinter.Frame):
 
             if self.Timestamp_var.get() == 0:
 
-                cv2.rectangle(self.frame, (380, 450), (670, 490), (255, 255, 255),thickness=-1)
+                cv2.rectangle(self.frame, (380, 0), (670, 27), (255, 255, 255),thickness=-1)
                 cv2.putText(self.frame,
                             text=f"{str(datetime.datetime.now().year)} {str(datetime.datetime.now().month).zfill(2)}/{str(datetime.datetime.now().day).zfill(2)} {str(datetime.datetime.now().hour).zfill(2)}:{str(datetime.datetime.now().minute).zfill(2)}:{str(datetime.datetime.now().second).zfill(2)}",
-                            org=(385, 472),
+                            org=(385, 22),
                             fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                             fontScale=0.7,
                             color=(0, 0, 0),
